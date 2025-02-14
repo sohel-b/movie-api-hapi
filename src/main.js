@@ -1,12 +1,12 @@
 
 'use strict';
 
-const Hapi = require('@hapi/hapi');
-const axios = require('axios');
-const { genres } = require('./genres.json') 
-
-// Replace with your TMDb API key
-const apiKey = 'a7fbf2d6d727835198a74874d82cf6c8';
+// const Hapi = require('@hapi/hapi');
+import Hapi from "@hapi/hapi"
+// const { moviesApiCall, trendingMovies, movieCastDetails, similarMovies, newsApiCall } = require('./routes/apiCalls/index.js');
+import { moviesApiCall, trendingMovies, movieCastDetails, similarMovies, newsApiCall } from './routes/apiCalls/index.js'
+// const { getLogin, createLogin } = require('./routes/mongoDbCalls/index.js');
+import {getLogin, createLogin } from "./routes/mongoDbCalls/index.js"
 
 const init = async () => {
 
@@ -20,46 +20,16 @@ const init = async () => {
         }
     });
     
+    // MongoDb Calls
+    server.route(getLogin)
+    server.route(createLogin)
 
-    // API route to get movie data from TMDb API
-    server.route({
-        method: 'GET',
-        path: '/api/movies/{movieName}',
-        handler: async (request, h) => {
-            const title = request.params.movieName;
-            try {
-                // Fetch movie data from TMDb
-                const response = await axios.get(`https://api.themoviedb.org/3/search/movie`, {
-                    params: {
-                        api_key: apiKey,
-                        query: title
-                    }
-                });
-
-                // Return the first movie result
-                if (response) {
-
-                    // changing genre_ids into genre_names
-                    for(let i of response.data.results) {
-                        let movieGenre = i?.genre_ids
-                            movieGenre?.forEach((id, index) => {
-                            const genre = genres?.find(item => item?.id === id)
-                            movieGenre[index] = genre?.name
-                        }) 
-                    }
-                    
-                    let result = response.data.results;
-                    return result
-                } else {
-                    return h.response({ error: 'Movie not found' }).code(404);
-                }
-
-            } catch (error) {
-                console.error(error);
-                return h.response({ error: 'Unable to fetch movie data' }).code(500);
-            }
-        }
-    });
+    // API calls
+    server.route(moviesApiCall);
+    server.route(trendingMovies)
+    server.route(movieCastDetails)
+    server.route(similarMovies)
+    server.route(newsApiCall)
 
     await server.start();
     console.log('Server running on %s', server.info.uri);
